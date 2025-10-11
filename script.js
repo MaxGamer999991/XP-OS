@@ -31,6 +31,11 @@ class Fenster {
 		fensters.push(this);
 	}
 	render() {
+		setColor(0, 0, 0);
+		ctx.fillRect(
+			this.x - 1, this.y - 1,
+			this.width + 2, this.height + 2
+		);
 		setColor(100, 100, 100);
 		ctx.fillRect(
 			this.x, this.y,
@@ -90,6 +95,24 @@ class Fenster {
 	close() {
 		fensters = fensters.filter(f => f != this);
 	}
+}
+function fenstersinit() {
+	canvas.addEventListener("mousedown", e => {
+		const rect = canvas.getBoundingClientRect();
+		const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+		const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+		for (let i = fensters.length - 1; i >= 0; i--) {
+			const f = fensters[i];
+			if (
+				x >= f.x && x <= f.x + f.width &&
+				y >= f.y && y <= f.y + f.height
+			) {
+				f.front();
+				return;
+			}
+		}
+	});
 }
 async function render() {
 	const sttime = performance.now();
@@ -178,10 +201,15 @@ async function main() {
 				(canvas.height * 0.5)
 			);
 		}
+		if (performance.now() - start > 12000) {
+			location.reload();
+			return;
+		}
 
 		await new Promise(requestAnimationFrame);
 	}
 	await new Promise(r => setTimeout(r, 2000));
+	fenstersinit();
 
 	new Fenster(50, 50, 200, 100, "Testfenster 1");
 	new Fenster(50, 50, 200, 100, "Testfenster 2");
@@ -223,18 +251,19 @@ async function main() {
 	
 		await render();
 
+		function fenstersfind(title) {
+			return fensters.find(f => f.title == title);
+		}
 		if (((performance.now() / 5) - 90) % (360 * 2) > 360) {
-			fensters[0].x = 100 + Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[0].y = 100 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[1].x = 200 - Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[1].y = 150 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[0].front();
+			fenstersfind("Testfenster 1").x = 100 + Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
+			fenstersfind("Testfenster 1").y = 100 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
+			fenstersfind("Testfenster 2").x = 200 - Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
+			fenstersfind("Testfenster 2").y = 150 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
 		} else {
-			fensters[0].x = 200 - Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[0].y = 100 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[1].x = 100 + Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[1].y = 150 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fensters[1].front();
+			fenstersfind("Testfenster 1").x = 200 - Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
+			fenstersfind("Testfenster 1").y = 100 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
+			fenstersfind("Testfenster 2").x = 100 + Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
+			fenstersfind("Testfenster 2").y = 150 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
 		}
 
 		await new Promise(requestAnimationFrame);
