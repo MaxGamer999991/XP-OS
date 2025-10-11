@@ -28,6 +28,11 @@ class Fenster {
 		this.height = height;
 		this.title = title;
 		this.type = type;
+		this.mouse = {
+			down: false,
+			x: 0,
+			y: 0
+		}
 		fensters.push(this);
 	}
 	render() {
@@ -84,6 +89,20 @@ class Fenster {
 			8, 8
 		);
 
+		setColor(0, 0, 0);
+		setSize(10);
+		ctx.fillText(
+			this.title,
+			this.x + 4,
+			this.y + 12
+		);
+
+	}
+	update() {
+		if (this.mouse.down) {
+			this.x = mouse.x - this.mouse.x;
+			this.y = mouse.y - this.mouse.y;
+		}
 	}
 	front() {
 		const index = fensters.indexOf(this);
@@ -95,6 +114,32 @@ class Fenster {
 	close() {
 		fensters = fensters.filter(f => f != this);
 	}
+}
+async function render() {
+	const sttime = performance.now();
+	for (let i = 0; i < fensters.length; i++) {
+		fensters[render_i].render();
+
+		render_i = (render_i + 1) % fensters.length;
+		if (performance.now() - sttime >= (1000 / 60)) {
+			break;
+		}
+	}
+}
+
+let mouse = {
+	x: 0,
+	y: 0,
+	dx: 0,
+	dy: 0
+};
+async function update() {
+	for (let i = 0; i < fensters.length; i++) {
+		fensters[i].update();
+	}
+
+	mouse.dx = 0;
+	mouse.dy = 0;
 }
 function fenstersinit() {
 	canvas.addEventListener("mousedown", e => {
@@ -109,21 +154,24 @@ function fenstersinit() {
 				y >= f.y && y <= f.y + f.height
 			) {
 				f.front();
+				f.mouse.down = true;
+				f.mouse.x = x - f.x;
+				f.mouse.y = y - f.y;
 				return;
 			}
 		}
 	});
-}
-async function render() {
-	const sttime = performance.now();
-	for (let i = 0; i < fensters.length; i++) {
-		fensters[render_i].render();
-
-		render_i = (render_i + 1) % fensters.length;
-		if (performance.now() - sttime >= (1000 / 60)) {
-			break;
+	canvas.addEventListener("mousemove", e => {
+		mouse.dx = e.movementX * (canvas.width / canvas.clientWidth);
+		mouse.dy = e.movementY * (canvas.height / canvas.clientHeight);
+		mouse.x = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.clientWidth);
+		mouse.y = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.clientHeight);
+	});
+	canvas.addEventListener("mouseup", e => {
+		for (let i = 0; i < fensters.length; i++) {
+			fensters[i].mouse.down = false;
 		}
-	}
+	});
 }
 
 function setColor(r, g, b) {
@@ -212,7 +260,7 @@ async function main() {
 	fenstersinit();
 
 	new Fenster(50, 50, 200, 100, "Testfenster 1");
-	new Fenster(50, 50, 200, 100, "Testfenster 2");
+	new Fenster(150, 150, 200, 100, "Testfenster 2");
 
 	let x = 0;
 	let y = 0;
@@ -249,22 +297,8 @@ async function main() {
 		setColor(255, 255, 255);
 		ctx.fillText("FPS: " + Math.round(frame), 10, 20);
 	
+		await update();
 		await render();
-
-		function fenstersfind(title) {
-			return fensters.find(f => f.title == title);
-		}
-		if (((performance.now() / 5) - 90) % (360 * 2) > 360) {
-			fenstersfind("Testfenster 1").x = 100 + Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fenstersfind("Testfenster 1").y = 100 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fenstersfind("Testfenster 2").x = 200 - Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fenstersfind("Testfenster 2").y = 150 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-		} else {
-			fenstersfind("Testfenster 1").x = 200 - Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fenstersfind("Testfenster 1").y = 100 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fenstersfind("Testfenster 2").x = 100 + Math.sin((performance.now() / 5) * (Math.PI / 180)) * 50;
-			fenstersfind("Testfenster 2").y = 150 + Math.cos((performance.now() / 5) * (Math.PI / 180)) * 50;
-		}
 
 		await new Promise(requestAnimationFrame);
 	}
