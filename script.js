@@ -125,6 +125,12 @@ async function render() {
 			break;
 		}
 	}
+
+	setColor(0, 0, 0);
+	ctx.fillRect(0, canvas.height - 20, 20, 20);
+	setColor(255, 255, 255);
+	setSize(15);
+	ctx.fillText("+", 7, canvas.height - 6);
 }
 
 let mouse = {
@@ -150,15 +156,36 @@ function fenstersinit() {
 		for (let i = fensters.length - 1; i >= 0; i--) {
 			const f = fensters[i];
 			if (
+				x >= f.x + f.width - 12 &&
+				x <= f.x + f.width - 2 &&
+				y >= f.y + 3 &&
+				y <= f.y + 12
+			) {
+				f.close();
+				return;
+			}
+			if (
 				x >= f.x && x <= f.x + f.width &&
 				y >= f.y && y <= f.y + f.height
 			) {
 				f.front();
-				f.mouse.down = true;
-				f.mouse.x = x - f.x;
-				f.mouse.y = y - f.y;
+				if (
+					x >= f.x && x <= f.x + f.width &&
+					y >= f.y && y <= f.y + 16
+				) {
+					f.mouse.down = true;
+					f.mouse.x = x - f.x;
+					f.mouse.y = y - f.y;
+				}
 				return;
 			}
+		}
+
+		if (
+			x < 20 &&
+			y > canvas.height - 20
+		) {
+			new Fenster(50, 50, 200, 100, "Neues Fenster " + (fensters.length + 1));
 		}
 	});
 	canvas.addEventListener("mousemove", e => {
