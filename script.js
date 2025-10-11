@@ -18,8 +18,7 @@ window.addEventListener("resize", resize);
 ctx.fillStyle = "rgba(41, 41, 41, 1)";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-let render_i = 0; // Fenster Index
-let fensters = []; // Fenster Array
+let fensters = [];
 class Fenster {
 	constructor(x, y, width, height, title = "Fenster", type = "normal") {
 		this.x = x;
@@ -122,19 +121,7 @@ class Fenster {
 	}
 }
 async function render() {
-	const sttime = performance.now();
-	const stti = render_i;
-	for (let i = 0; i < fensters.length; i++) {
-		fensters[render_i].render();
-
-		render_i = (render_i + 1) % fensters.length;
-		if (performance.now() - sttime >= (1000 / 60)) {
-			break;
-		}
-		if (render_i == stti - 1) {
-			break;
-		}
-	}
+	fensters.forEach(f => f.render());
 
 	setColor(0, 0, 0);
 	ctx.fillRect(0, canvas.height - 20, 20, 20);
@@ -150,9 +137,7 @@ let mouse = {
 	dy: 0
 };
 async function update() {
-	for (let i = 0; i < fensters.length; i++) {
-		fensters[i].update();
-	}
+	fensters.forEach(f => f.update());
 }
 function fenstersinit() {
 	function mousedown(e) {
@@ -203,7 +188,6 @@ function fenstersinit() {
 						f.mouse.x = x - prevX;
 						f.mouse.y = y - prevY;
 					}
-					f.fullscreen = false;
 				}
 				return;
 			}
@@ -224,6 +208,12 @@ function fenstersinit() {
 
 		if (!e.buttons) {
 			mouseup(e);
+		}
+
+		for (let i = 0; i < fensters.length; i++) {
+			if (fensters[i].mouse.down) {
+				fensters[i].fullscreen = false;
+			}
 		}
 	}
 	function mouseup(e) {
@@ -329,7 +319,7 @@ async function main() {
 	let time = 0;
 	let frame = 0;
 	while (true) {
-		while (true && render_i == 0) {
+		while (true) {
 			setColor(
 				(x + (performance.now() / 25)) % 256,
 				(y + (performance.now() / 100)) % 256,
@@ -347,9 +337,15 @@ async function main() {
 				}
 			}
 		}
+
+		await update();
+		await render();
+
+		mouse.dx = 0;
+		mouse.dy = 0;
+
 		let performe = performance.now();
 		let dif = performe - time;
-
 		frame = ((frame * dif) + (1000 / dif)) / (dif + 1);
 		time = performe;
 
@@ -358,15 +354,6 @@ async function main() {
 		ctx.fillRect(9, 9, 55, 13);
 		setColor(255, 255, 255);
 		ctx.fillText("FPS: " + Math.round(frame), 10, 20);
-	
-		await update();
-		await render();
-
-		mouse.dx = 0;
-		mouse.dy = 0;
-
-		// sim Lag
-		// await new Promise(r => setTimeout(r, (1000 / (Math.random() * 30 + 15))));
 
 		await new Promise(requestAnimationFrame);
 	}
