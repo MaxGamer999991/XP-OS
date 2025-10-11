@@ -26,6 +26,7 @@ class Fenster {
 		this.y = y;
 		this.width = width;
 		this.height = height;
+		this.fullscreen = false;
 		this.title = title;
 		this.type = type;
 		this.mouse = {
@@ -36,56 +37,61 @@ class Fenster {
 		fensters.push(this);
 	}
 	render() {
+		const prevX = (this.fullscreen ? 0 : this.x) + (this.mouse.down ? mouse.dx : 0);
+		const prevY = (this.fullscreen ? 0 : this.y) + (this.mouse.down ? mouse.dy : 0);
+		const prevWidth = this.fullscreen ? canvas.width : this.width;
+		const prevHeight = this.fullscreen ? canvas.height : this.height;
+
 		setColor(0, 0, 0);
 		ctx.fillRect(
-			this.x - 1, this.y - 1,
-			this.width + 2, this.height + 2
+			prevX - 1, prevY - 1,
+			prevWidth + 2, prevHeight + 2
 		);
 		setColor(100, 100, 100);
 		ctx.fillRect(
-			this.x, this.y,
-			this.width, this.height
+			prevX, prevY,
+			prevWidth, prevHeight
 		);
 
 		setColor(125, 125, 125);
 		ctx.fillRect(
-			this.x + 2, this.y + 2,
-			this.width - 4, 12
+			prevX + 2, prevY + 2,
+			prevWidth - 4, 12
 		);
 
 		setColor(150, 150, 150);
 		ctx.fillRect(
-			this.x + this.width - 12,
-			this.y + 3,
+			prevX + prevWidth - 12,
+			prevY + 3,
 			10, 10
 		);
 		ctx.fillRect(
-			this.x + this.width - 22,
-			this.y + 3,
+			prevX + prevWidth - 22,
+			prevY + 3,
 			10, 10
 		);
 		ctx.fillRect(
-			this.x + this.width - 34,
-			this.y + 3,
+			prevX + prevWidth - 34,
+			prevY + 3,
 			10, 10
 		);
 
 		ctx.drawImage(
 			getAsset("win_close").img,
-			this.x + this.width - 11,
-			this.y + 4,
+			prevX + prevWidth - 11,
+			prevY + 4,
 			8, 8
 		);
 		ctx.drawImage(
 			getAsset("win_max").img,
-			this.x + this.width - 21,
-			this.y + 4,
+			prevX + prevWidth - 21,
+			prevY + 4,
 			8, 8
 		);
 		ctx.drawImage(
 			getAsset("win_min").img,
-			this.x + this.width - 33,
-			this.y + 4,
+			prevX + prevWidth - 33,
+			prevY + 4,
 			8, 8
 		);
 
@@ -93,8 +99,8 @@ class Fenster {
 		setSize(10);
 		ctx.fillText(
 			this.title,
-			this.x + 4,
-			this.y + 12
+			prevX + 4,
+			prevY + 12
 		);
 
 	}
@@ -117,11 +123,15 @@ class Fenster {
 }
 async function render() {
 	const sttime = performance.now();
+	const stti = render_i;
 	for (let i = 0; i < fensters.length; i++) {
 		fensters[render_i].render();
 
 		render_i = (render_i + 1) % fensters.length;
 		if (performance.now() - sttime >= (1000 / 60)) {
+			break;
+		}
+		if (render_i == stti - 1) {
 			break;
 		}
 	}
@@ -143,39 +153,57 @@ async function update() {
 	for (let i = 0; i < fensters.length; i++) {
 		fensters[i].update();
 	}
-
-	mouse.dx = 0;
-	mouse.dy = 0;
 }
 function fenstersinit() {
-	canvas.addEventListener("mousedown", e => {
+	function mousedown(e) {
 		const rect = canvas.getBoundingClientRect();
 		const x = (e.clientX - rect.left) * (canvas.width / rect.width);
 		const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
 		for (let i = fensters.length - 1; i >= 0; i--) {
 			const f = fensters[i];
+			const prevX = f.fullscreen ? 0 : f.x;
+			const prevY = f.fullscreen ? 0 : f.y;
+			const prevWidth = f.fullscreen ? canvas.width : f.width;
+			const prevHeight = f.fullscreen ? canvas.height : f.height;
+
 			if (
-				x >= f.x + f.width - 12 &&
-				x <= f.x + f.width - 2 &&
-				y >= f.y + 3 &&
-				y <= f.y + 12
+				x >= prevX + prevWidth - 12 &&
+				x <= prevX + prevWidth - 2 &&
+				y >= prevY + 3 &&
+				y <= prevY + 12
 			) {
 				f.close();
 				return;
 			}
+			
 			if (
-				x >= f.x && x <= f.x + f.width &&
-				y >= f.y && y <= f.y + f.height
+				x >= prevX && x <= prevX + prevWidth &&
+				y >= prevY && y <= prevY + prevHeight
 			) {
 				f.front();
 				if (
-					x >= f.x && x <= f.x + f.width &&
-					y >= f.y && y <= f.y + 16
+					x >= prevX + prevWidth - 22 &&
+					x <= prevX + prevWidth - 12 &&
+					y >= prevY + 3 &&
+					y <= prevY + 12
+				) {
+					f.fullscreen = !f.fullscreen;
+					return;
+				}
+				if (
+					x >= prevX && x <= prevX + prevWidth &&
+					y >= prevY && y <= prevY + 16
 				) {
 					f.mouse.down = true;
-					f.mouse.x = x - f.x;
-					f.mouse.y = y - f.y;
+					if (f.fullscreen) {
+						f.mouse.x = (f.width / 2);
+						f.mouse.y = 7;
+					} else {
+						f.mouse.x = x - prevX;
+						f.mouse.y = y - prevY;
+					}
+					f.fullscreen = false;
 				}
 				return;
 			}
@@ -187,18 +215,25 @@ function fenstersinit() {
 		) {
 			new Fenster(50, 50, 200, 100, "Neues Fenster " + (fensters.length + 1));
 		}
-	});
-	canvas.addEventListener("mousemove", e => {
+	}
+	function mousemove(e) {
 		mouse.dx = e.movementX * (canvas.width / canvas.clientWidth);
 		mouse.dy = e.movementY * (canvas.height / canvas.clientHeight);
 		mouse.x = (e.clientX - canvas.getBoundingClientRect().left) * (canvas.width / canvas.clientWidth);
 		mouse.y = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.clientHeight);
-	});
-	canvas.addEventListener("mouseup", e => {
+
+		if (!e.buttons) {
+			mouseup(e);
+		}
+	}
+	function mouseup(e) {
 		for (let i = 0; i < fensters.length; i++) {
 			fensters[i].mouse.down = false;
 		}
-	});
+	}
+	canvas.addEventListener("mousedown", mousedown);
+	canvas.addEventListener("mousemove", mousemove);
+	canvas.addEventListener("mouseup", mouseup);
 }
 
 function setColor(r, g, b) {
@@ -294,7 +329,7 @@ async function main() {
 	let time = 0;
 	let frame = 0;
 	while (true) {
-		while (true) {
+		while (true && render_i == 0) {
 			setColor(
 				(x + (performance.now() / 25)) % 256,
 				(y + (performance.now() / 100)) % 256,
@@ -326,6 +361,12 @@ async function main() {
 	
 		await update();
 		await render();
+
+		mouse.dx = 0;
+		mouse.dy = 0;
+
+		// sim Lag
+		// await new Promise(r => setTimeout(r, (1000 / (Math.random() * 30 + 15))));
 
 		await new Promise(requestAnimationFrame);
 	}
