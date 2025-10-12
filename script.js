@@ -2,7 +2,6 @@ const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 640;
 canvas.height = 480;
-ctx.imageSmoothingEnabled = true;
 
 function resize() {
 	const multi = Math.min(
@@ -20,7 +19,7 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 let fensters = [];
 class Fenster {
-	constructor(x, y, width, height, title = "Fenster", type = "normal") {
+	constructor(x, y, width, height, title = "Fenster", type = "normal", code = { render: () => {}, update: () => {} }) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
@@ -28,6 +27,16 @@ class Fenster {
 		this.fullscreen = false;
 		this.title = title;
 		this.type = type;
+		this.showTitle = true;
+		this.code = code;
+		this.var = {};
+
+		this.canvas = document.createElement("canvas");
+		this.canvas.width = width;
+		this.canvas.height = height;
+		this.ctx = this.canvas.getContext("2d");
+		this.ctx.imageSmoothingEnabled = false;
+
 		this.mouse = {
 			down: false,
 			x: 0,
@@ -40,6 +49,19 @@ class Fenster {
 		const prevY = (this.fullscreen ? 0 : this.y) + (this.mouse.down ? mouse.dy : 0);
 		const prevWidth = this.fullscreen ? canvas.width : this.width;
 		const prevHeight = this.fullscreen ? canvas.height : this.height;
+		const innerWidth = prevWidth - (this.fullscreen && !this.showTitle ? 0 : 4);
+		const innerHeight = prevHeight - (this.showTitle ? 18 : (this.fullscreen ? 0 : 4));
+
+		if (
+			this.canvas.width != innerWidth ||
+			this.canvas.height != innerHeight
+		) {
+			this.canvas.width = innerWidth;
+			this.canvas.height = innerHeight;
+			this.code.render(this, this.ctx, innerWidth, innerHeight, true);
+		} else {
+			this.code.render(this, this.ctx, innerWidth, innerHeight, false);
+		}
 
 		setColor(0, 0, 0);
 		ctx.fillRect(
@@ -75,6 +97,7 @@ class Fenster {
 			10, 10
 		);
 
+		ctx.imageSmoothingEnabled = true;
 		ctx.drawImage(
 			getAsset("win_close").img,
 			prevX + prevWidth - 11,
@@ -93,6 +116,7 @@ class Fenster {
 			prevY + 4,
 			8, 8
 		);
+		ctx.imageSmoothingEnabled = false;
 
 		setColor(0, 0, 0);
 		setSize(10);
@@ -102,11 +126,19 @@ class Fenster {
 			prevY + 12
 		);
 
+		ctx.drawImage(
+			this.canvas,
+			prevX + (this.fullscreen && !this.showTitle ? 0 : 2),
+			prevY + (this.showTitle ? 16 : (this.fullscreen ? 0 : 2)),
+			innerWidth,
+			innerHeight
+		);
 	}
 	update() {
 		if (this.mouse.down) {
 			this.x = mouse.x - this.mouse.x;
 			this.y = mouse.y - this.mouse.y;
+			this.code.update(this, 2);
 		}
 	}
 	front() {
@@ -156,7 +188,8 @@ function fenstersinit() {
 				x >= prevX + prevWidth - 12 &&
 				x <= prevX + prevWidth - 2 &&
 				y >= prevY + 3 &&
-				y <= prevY + 12
+				y <= prevY + 12 &&
+				f.showTitle
 			) {
 				f.close();
 				return;
@@ -171,14 +204,16 @@ function fenstersinit() {
 					x >= prevX + prevWidth - 22 &&
 					x <= prevX + prevWidth - 12 &&
 					y >= prevY + 3 &&
-					y <= prevY + 12
+					y <= prevY + 12 &&
+					f.showTitle
 				) {
 					f.fullscreen = !f.fullscreen;
 					return;
 				}
 				if (
 					x >= prevX && x <= prevX + prevWidth &&
-					y >= prevY && y <= prevY + 16
+					y >= prevY && y <= prevY + 16 &&
+					f.showTitle
 				) {
 					f.mouse.down = true;
 					if (f.fullscreen) {
@@ -188,7 +223,11 @@ function fenstersinit() {
 						f.mouse.x = x - prevX;
 						f.mouse.y = y - prevY;
 					}
+					return;
 				}
+				f.mouse.x = x - prevX - (f.fullscreen && !f.showTitle ? 0 : 2);
+				f.mouse.y = y - prevY - (f.showTitle ? 16 : (f.fullscreen ? 0 : 2));
+				f.code.update(f, 1);
 				return;
 			}
 		}
@@ -226,18 +265,18 @@ function fenstersinit() {
 	canvas.addEventListener("mouseup", mouseup);
 }
 
-function setColor(r, g, b) {
+function setColor(r, g, b, canvas = ctx) {
 	const i = 256 / 12;
 	r = Math.min(Math.max(r, 0), 255);
 	g = Math.min(Math.max(g, 0), 255);
 	b = Math.min(Math.max(b, 0), 255);
-	ctx.fillStyle = "rgb(" +
+	canvas.fillStyle = "rgb(" +
 		(Math.floor(r / i) * i) + "," +
 		(Math.floor(g / i) * i) + "," +
 		(Math.floor(b / i) * i) + ")";
 }
-function setSize(size) {
-	ctx.font = size + "px monospace";
+function setSize(size, canvas = ctx) {
+	canvas.font = size + "px monospace";
 }
 const assets = [];
 class Asset {
@@ -311,7 +350,55 @@ async function main() {
 	await new Promise(r => setTimeout(r, 2000));
 	fenstersinit();
 
-	new Fenster(50, 50, 200, 100, "Testfenster 1");
+	new Fenster(50, 50, 200, 100, "Testfenster 1", "normal", {
+		render: (fenster, ctx, width, height, isChanged) => {
+			if (isChanged) {
+				fenster.var.x = 0;
+				fenster.var.y = 0;
+				setColor(255, 255, 255, ctx);
+				ctx.fillRect(0, 0, width, height);
+			}
+			
+			const i = 10;
+			setColor(
+				Math.random() * 255,
+				Math.random() * 255,
+				Math.random() * 255,
+				ctx
+			);
+			ctx.fillRect(
+				fenster.var.x * (width / i),
+				fenster.var.y * (height / i),
+				(width / i),
+				(height / i)
+			);
+
+			fenster.var.x = fenster.var.x + 1;
+			if (fenster.var.x > i) {
+				fenster.var.x = 0;
+				fenster.var.y = fenster.var.y + 1;
+				if (fenster.var.y > i) fenster.var.y = 0;
+			}
+
+			setColor(0, 0, 0, ctx);
+			ctx.fillRect(0, 0, 16, 16);
+			setSize(10, ctx);
+			ctx.fillText("<- Toggle Title", 20, 12);
+		},
+		update: (fenster, mode) => {
+			if (mode == 1) {
+				if (
+					fenster.mouse.x < 16 &&
+					fenster.mouse.y < 16
+				) {
+					fenster.showTitle = !fenster.showTitle;
+				}
+				
+				setColor(0, 0, 0, fenster.ctx);
+				fenster.ctx.fillRect(fenster.mouse.x - 2, fenster.mouse.y - 2, 4, 4);
+			}
+		}
+	});
 	new Fenster(150, 150, 200, 100, "Testfenster 2");
 
 	let x = 0;
