@@ -19,7 +19,7 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 let fensters = [];
 class Fenster {
-	constructor(x, y, width, height, title = "Fenster", type = "normal", code = { render: () => {}, update: () => {} }) {
+	constructor(x, y, width, height, title = "Fenster", type = "normal", code = { render: () => { }, update: () => { } }, content = null) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
@@ -31,6 +31,7 @@ class Fenster {
 		this.showBorder = true;
 		this.code = code;
 		this.var = {};
+		this.content = content;
 
 		this.canvas = document.createElement("canvas");
 		this.canvas.width = width;
@@ -42,10 +43,20 @@ class Fenster {
 			down: false,
 			x: 0,
 			y: 0
+		};
+		if (!["normal", "warning", "error"].includes(type)) {
+			throw new Error("Fenstertyp '" + type + "' nicht gefunden!");
 		}
+
 		fensters.push(this);
 	}
 	render() {
+		if (this.type == "warning" || this.type == "error") {
+			this.showTitle = true;
+			this.showBorder = true;
+			this.fullscreen = false;
+		}
+
 		const prevX = (this.fullscreen ? 0 : this.x) + (this.mouse.down ? mouse.dx : 0);
 		const prevY = (this.fullscreen ? 0 : this.y) + (this.mouse.down ? mouse.dy : 0);
 		const prevWidth = this.fullscreen ? canvas.width : this.width;
@@ -59,9 +70,11 @@ class Fenster {
 		) {
 			this.canvas.width = innerWidth;
 			this.canvas.height = innerHeight;
-			this.code.render(this, this.ctx, innerWidth, innerHeight, true);
+			if (this.code.render && this.type == "normal")
+				this.code.render(this, this.ctx, innerWidth, innerHeight, true);
 		} else {
-			this.code.render(this, this.ctx, innerWidth, innerHeight, false);
+			if (this.code.render && this.type == "normal")
+				this.code.render(this, this.ctx, innerWidth, innerHeight, false);
 		}
 
 		if (this.showBorder) {
@@ -122,15 +135,52 @@ class Fenster {
 			);
 			ctx.imageSmoothingEnabled = false;
 
-			setColor(0, 0, 0);
+			setColor(this.type == "error" || this.type == "warning" ? 255 : 0, this.type == "warning" ? 255 : 0, 0);
 			setSize(10);
 			ctx.fillText(
-				this.title,
+				this.type == "normal" ? this.title : this.type.toUpperCase(),
 				prevX + (this.showBorder ? 4 : 2),
 				prevY + (this.showBorder ? 12 : 10)
 			);
 		}
 
+		if (this.type == "warning" || this.type == "error") {
+			this.ctx.clearRect(0, 0, innerWidth, innerHeight);
+			setColor(125, 125, 125, this.ctx);
+			this.ctx.fillRect(0, 0, innerWidth, innerHeight);
+			setColor(0, 0, 0, this.ctx);
+			setSize(10, this.ctx);
+
+			let x = 0;
+			let y = 0;
+			let i = 0;
+			while (y < innerHeight && i < this.content.length) {
+				while (x < innerWidth && i < this.content.length) {
+					let mess = this.ctx.measureText(this.content[i]);
+					if (x + mess.width > innerWidth || this.content[i] == "\n") {
+						x = 0;
+						y += 12;
+						if (y >= innerHeight) break;
+					}
+					if (this.content[i] == "\n") i++;
+					this.ctx.fillText(this.content[i], x, y + 10);
+					x += mess.width;
+					i++;
+				}
+			}
+
+			setColor(0, 0, 0, this.ctx);
+			this.ctx.fillRect(innerWidth - 55, innerHeight - 20, 50, 15);
+			if (this.type == "error") {
+				setColor(150, 50, 50, this.ctx);
+			} else {
+				setColor(100, 100, 100, this.ctx);
+			}
+			this.ctx.fillRect(innerWidth - 54, innerHeight - 19, 48, 13);
+			setColor(0, 0, 0, this.ctx);
+			setSize(10, this.ctx);
+			this.ctx.fillText("OK", innerWidth - 36, innerHeight - 8);
+		}
 		ctx.drawImage(
 			this.canvas,
 			prevX + (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 2 : 0)),
@@ -143,8 +193,15 @@ class Fenster {
 		if (this.mouse.down) {
 			this.x = mouse.x - this.mouse.x;
 			this.y = mouse.y - this.mouse.y;
-			this.code.update(this, 2);
+			this.doUpdate(2);
 		}
+	}
+	doUpdate(mode) {
+		if (this.code.update && (this.type == "normal" || mode != 3))
+			this.code.update(this, mode,
+				(this.fullscreen ? canvas.width : this.width) - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0)),
+				(this.fullscreen ? canvas.height : this.height) - (this.showTitle ? (this.showBorder ? 18 : 12) : (this.fullscreen ? 0 : (this.showBorder ? 4 : 0)))
+			);
 	}
 	front() {
 		const index = fensters.indexOf(this);
@@ -160,14 +217,8 @@ class Fenster {
 function findFensterByTitle(title) {
 	return fensters.find(f => f.title == title);
 }
-async function render() {
+function render() {
 	fensters.forEach(f => f.render());
-
-	setColor(0, 0, 0);
-	ctx.fillRect(0, canvas.height - 20, 20, 20);
-	setColor(255, 255, 255);
-	setSize(15);
-	ctx.fillText("+", 7, canvas.height - 6);
 }
 
 let mouse = {
@@ -176,7 +227,7 @@ let mouse = {
 	dx: 0,
 	dy: 0
 };
-async function update() {
+function update() {
 	fensters.forEach(f => f.update());
 }
 function fenstersinit() {
@@ -202,7 +253,7 @@ function fenstersinit() {
 				f.close();
 				return;
 			}
-			
+
 			if (
 				x >= prevX && x <= prevX + prevWidth &&
 				y >= prevY && y <= prevY + prevHeight
@@ -235,16 +286,20 @@ function fenstersinit() {
 				}
 				f.mouse.x = x - prevX - (f.fullscreen && !f.showTitle ? 0 : 2);
 				f.mouse.y = y - prevY - (f.showTitle ? 16 : (f.fullscreen ? 0 : 2));
-				f.code.update(f, 1);
+				f.doUpdate(1);
+				if (f.type == "warning" || f.type == "error") {
+					if (
+						f.mouse.x >= f.canvas.width - 55 &&
+						f.mouse.x <= f.canvas.width - 5 &&
+						f.mouse.y >= f.canvas.height - 20 &&
+						f.mouse.y <= f.canvas.height - 5
+					) {
+						f.doUpdate(3);
+						f.close();
+					}
+				}
 				return;
 			}
-		}
-
-		if (
-			x < 20 &&
-			y > canvas.height - 20
-		) {
-			new Fenster(50, 50, 200, 100, "Neues Fenster " + (fensters.length + 1));
 		}
 	}
 	function mousemove(e) {
@@ -293,6 +348,8 @@ class Asset {
 		this.name = name || path;
 		this.img = new Image();
 		this.img.src = path;
+		this.hasError = false;
+		this.img.addEventListener("error", () => this.hasError = true);
 		assets.push(this);
 	}
 	isLoaded() {
@@ -301,8 +358,16 @@ class Asset {
 		}
 		return false;
 	}
-	iferror() {
-		
+	error() {
+		if (this.hasError) {
+			if (!this.timeout) this.timeout = performance.now();
+			if (performance.now() - this.timeout > 5000) {
+				this.img.src = this.path;
+				this.timeout = false;
+				return true;
+			}
+		}
+		return false;
 	}
 }
 function getAsset(name) {
@@ -313,6 +378,8 @@ async function main() {
 	new Asset("./Maximiren.png", "win_max");
 	new Asset("./Minimiren.png", "win_min");
 	new Asset("./Schlissen.png", "win_close");
+	new Asset("./Logo.png", "logo");
+	let log = [];
 	while (
 		performance.now() - start < 2000 ||
 		assets.reduce((a, b) => a || !b.isLoaded(), 0)
@@ -348,10 +415,20 @@ async function main() {
 				(canvas.height * 0.5)
 			);
 		}
-		if (performance.now() - start > 12000) {
-			location.reload();
-			return;
-		}
+
+		while (log.length > 15) log.shift();
+		log.forEach((l, i) => {
+			setColor(100, 100, 100);
+			ctx.fillRect(0, canvas.height - ((i + 1) * 12), canvas.width, 12);
+			setColor(255, 255, 255);
+			setSize(10);
+			ctx.fillText(l, 0, canvas.height - (i * 12) - 2);
+		});
+		assets.forEach(a => {
+			if (a.error()) {
+				log.push("Fehler beim Laden von Asset '" + a.name + "'!");
+			}
+		});
 
 		await new Promise(requestAnimationFrame);
 	}
@@ -366,7 +443,7 @@ async function main() {
 				setColor(255, 255, 255, ctx);
 				ctx.fillRect(0, 0, width, height);
 			}
-			
+
 			const i = 10;
 			setColor(
 				Math.random() * 255,
@@ -395,8 +472,18 @@ async function main() {
 			ctx.fillRect(0, 20, 16, 16);
 			ctx.fillText("<- Toggle Border", 20, 32);
 			ctx.fillText(Math.floor(fenster.x) + " " + Math.floor(fenster.y), 1, 50);
+
+			setColor(255, 0, 0, ctx);
+			ctx.fillRect(width - 20, height - 20, 20, 20);
+			setColor(0, 0, 0, ctx);
+			ctx.fillText("E", width - 13, height - 6);
+
+			setColor(255, 0, 0, ctx);
+			ctx.fillRect(width - 20, height - 45, 20, 20);
+			setColor(0, 0, 0, ctx);
+			ctx.fillText("W", width - 13, height - 31);
 		},
-		update: (fenster, mode) => {
+		update: (fenster, mode, width, height) => {
 			if (mode == 1) {
 				if (
 					fenster.mouse.x < 16 &&
@@ -412,7 +499,35 @@ async function main() {
 				) {
 					fenster.showBorder = !fenster.showBorder;
 				}
-				
+
+				if (
+					fenster.mouse.x > width - 20 &&
+					fenster.mouse.y > height - 20
+				) {
+					new Fenster(
+						fenster.x + 25,
+						fenster.y + 25,
+						200, 100,
+						"Error", "error",
+						{},
+						"Dies ist eine Fehlermeldung!\nBitte schließen Sie dieses Fenster."
+					).front();
+				}
+				if (
+					fenster.mouse.x > width - 20 &&
+					fenster.mouse.y > height - 45 &&
+					fenster.mouse.y < height - 25
+				) {
+					new Fenster(
+						fenster.x + 25,
+						fenster.y + 25,
+						200, 100,
+						"Warnung", "warning",
+						{},
+						"Dies ist eine Warnung!\nBitte schließen Sie dieses Fenster."
+					).front();
+				}
+
 				setColor(0, 0, 0, fenster.ctx);
 				fenster.ctx.fillRect(fenster.mouse.x - 2, fenster.mouse.y - 2, 4, 4);
 			}
@@ -449,10 +564,12 @@ async function main() {
 			fenster.showTitle = false;
 			fenster.showBorder = false;
 		},
-		update: (fenster, mode) => {
-			
+		update: (fenster, mode, width, height) => {
+
 		}
 	});
+	new Fenster(300, 100, 200, 100, "Warnung", "warning", {}, "Dies ist eine Warnung!\nBitte schließen Sie dieses Fenster.");
+	new Fenster(280, 250, 200, 100, "Error", "error", {}, "Dies ist eine Error!\nBitte schließen Sie dieses Fenster.");
 	findFensterByTitle("Testfenster 1").front();
 
 	let x = 0;
@@ -479,8 +596,8 @@ async function main() {
 			}
 		}
 
-		await update();
-		await render();
+		update();
+		render();
 
 		mouse.dx = 0;
 		mouse.dy = 0;
