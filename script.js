@@ -28,6 +28,7 @@ class Fenster {
 		this.title = title;
 		this.type = type;
 		this.showTitle = true;
+		this.showBorder = true;
 		this.code = code;
 		this.var = {};
 
@@ -49,8 +50,8 @@ class Fenster {
 		const prevY = (this.fullscreen ? 0 : this.y) + (this.mouse.down ? mouse.dy : 0);
 		const prevWidth = this.fullscreen ? canvas.width : this.width;
 		const prevHeight = this.fullscreen ? canvas.height : this.height;
-		const innerWidth = prevWidth - (this.fullscreen && !this.showTitle ? 0 : 4);
-		const innerHeight = prevHeight - (this.showTitle ? 18 : (this.fullscreen ? 0 : 4));
+		const innerWidth = prevWidth - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0));
+		const innerHeight = prevHeight - (this.showTitle ? (this.showBorder ? 18 : 12) : (this.fullscreen ? 0 : (this.showBorder ? 4 : 0)));
 
 		if (
 			this.canvas.width != innerWidth ||
@@ -63,73 +64,77 @@ class Fenster {
 			this.code.render(this, this.ctx, innerWidth, innerHeight, false);
 		}
 
-		setColor(0, 0, 0);
-		ctx.fillRect(
-			prevX - 1, prevY - 1,
-			prevWidth + 2, prevHeight + 2
-		);
-		setColor(100, 100, 100);
-		ctx.fillRect(
-			prevX, prevY,
-			prevWidth, prevHeight
-		);
+		if (this.showBorder) {
+			setColor(0, 0, 0);
+			ctx.fillRect(
+				prevX - 1, prevY - 1,
+				prevWidth + 2, prevHeight + 2
+			);
+			setColor(100, 100, 100);
+			ctx.fillRect(
+				prevX, prevY,
+				prevWidth, prevHeight
+			);
+		}
 
-		setColor(125, 125, 125);
-		ctx.fillRect(
-			prevX + 2, prevY + 2,
-			prevWidth - 4, 12
-		);
+		if (this.showTitle) {
+			setColor(125, 125, 125);
+			ctx.fillRect(
+				prevX + (this.showBorder ? 2 : 0), prevY + (this.showBorder ? 2 : 0),
+				prevWidth - (this.showBorder ? 4 : 0), 12
+			);
 
-		setColor(150, 150, 150);
-		ctx.fillRect(
-			prevX + prevWidth - 12,
-			prevY + 3,
-			10, 10
-		);
-		ctx.fillRect(
-			prevX + prevWidth - 22,
-			prevY + 3,
-			10, 10
-		);
-		ctx.fillRect(
-			prevX + prevWidth - 34,
-			prevY + 3,
-			10, 10
-		);
+			setColor(150, 150, 150);
+			ctx.fillRect(
+				prevX + prevWidth - (this.showBorder ? 12 : 11),
+				prevY + (this.showBorder ? 3 : 1),
+				10, 10
+			);
+			ctx.fillRect(
+				prevX + prevWidth - (this.showBorder ? 22 : 21),
+				prevY + (this.showBorder ? 3 : 1),
+				10, 10
+			);
+			ctx.fillRect(
+				prevX + prevWidth - (this.showBorder ? 34 : 33),
+				prevY + (this.showBorder ? 3 : 1),
+				10, 10
+			);
 
-		ctx.imageSmoothingEnabled = true;
-		ctx.drawImage(
-			getAsset("win_close").img,
-			prevX + prevWidth - 11,
-			prevY + 4,
-			8, 8
-		);
-		ctx.drawImage(
-			getAsset("win_max").img,
-			prevX + prevWidth - 21,
-			prevY + 4,
-			8, 8
-		);
-		ctx.drawImage(
-			getAsset("win_min").img,
-			prevX + prevWidth - 33,
-			prevY + 4,
-			8, 8
-		);
-		ctx.imageSmoothingEnabled = false;
+			ctx.imageSmoothingEnabled = true;
+			ctx.drawImage(
+				getAsset("win_close").img,
+				prevX + prevWidth - (this.showBorder ? 11 : 10),
+				prevY + (this.showBorder ? 4 : 2),
+				8, 8
+			);
+			ctx.drawImage(
+				getAsset("win_max").img,
+				prevX + prevWidth - (this.showBorder ? 21 : 20),
+				prevY + (this.showBorder ? 4 : 2),
+				8, 8
+			);
+			ctx.drawImage(
+				getAsset("win_min").img,
+				prevX + prevWidth - (this.showBorder ? 33 : 32),
+				prevY + (this.showBorder ? 4 : 2),
+				8, 8
+			);
+			ctx.imageSmoothingEnabled = false;
 
-		setColor(0, 0, 0);
-		setSize(10);
-		ctx.fillText(
-			this.title,
-			prevX + 4,
-			prevY + 12
-		);
+			setColor(0, 0, 0);
+			setSize(10);
+			ctx.fillText(
+				this.title,
+				prevX + (this.showBorder ? 4 : 2),
+				prevY + (this.showBorder ? 12 : 10)
+			);
+		}
 
 		ctx.drawImage(
 			this.canvas,
-			prevX + (this.fullscreen && !this.showTitle ? 0 : 2),
-			prevY + (this.showTitle ? 16 : (this.fullscreen ? 0 : 2)),
+			prevX + (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 2 : 0)),
+			prevY + (this.showTitle ? (this.showBorder ? 16 : 12) : (this.fullscreen ? 0 : (this.showBorder ? 2 : 0))),
 			innerWidth,
 			innerHeight
 		);
@@ -151,6 +156,9 @@ class Fenster {
 	close() {
 		fensters = fensters.filter(f => f != this);
 	}
+}
+function findFensterByTitle(title) {
+	return fensters.find(f => f.title == title);
 }
 async function render() {
 	fensters.forEach(f => f.render());
@@ -384,6 +392,9 @@ async function main() {
 			ctx.fillRect(0, 0, 16, 16);
 			setSize(10, ctx);
 			ctx.fillText("<- Toggle Title", 20, 12);
+			ctx.fillRect(0, 20, 16, 16);
+			ctx.fillText("<- Toggle Border", 20, 32);
+			ctx.fillText(Math.floor(fenster.x) + " " + Math.floor(fenster.y), 1, 50);
 		},
 		update: (fenster, mode) => {
 			if (mode == 1) {
@@ -393,13 +404,56 @@ async function main() {
 				) {
 					fenster.showTitle = !fenster.showTitle;
 				}
+
+				if (
+					fenster.mouse.x < 16 &&
+					fenster.mouse.y > 20 &&
+					fenster.mouse.y < 36
+				) {
+					fenster.showBorder = !fenster.showBorder;
+				}
 				
 				setColor(0, 0, 0, fenster.ctx);
 				fenster.ctx.fillRect(fenster.mouse.x - 2, fenster.mouse.y - 2, 4, 4);
 			}
+			if (mode == 2) {
+				setColor(255, 255, 255, fenster.ctx);
+				fenster.ctx.fillRect(0, 40, 50, 13);
+			}
 		}
 	});
-	new Fenster(150, 150, 200, 100, "Testfenster 2");
+	new Fenster(150, 150, 200, 100, "Testfenster 2", "normal", {
+		render: (fenster, ctx, width, height, isChanged) => {
+			fenster.var.dx = (fenster.var.dx || -1);
+			fenster.var.dy = (fenster.var.dy || 1);
+
+			if (
+				fenster.x < 0 ||
+				fenster.x + fenster.width > canvas.width
+			) fenster.var.dx *= -1;
+			if (
+				fenster.y < 0 ||
+				fenster.y + fenster.height > canvas.height
+			) fenster.var.dy *= -1;
+
+			setColor(0, 0, 0, ctx);
+			ctx.fillRect(0, 0, width, height);
+			setSize(20, ctx);
+			setColor(255, 255, 255, ctx);
+			ctx.fillText("DVD", 10, 20);
+
+			fenster.x += fenster.var.dx;
+			fenster.y += fenster.var.dy;
+
+			fenster.fullscreen = false;
+			fenster.showTitle = false;
+			fenster.showBorder = false;
+		},
+		update: (fenster, mode) => {
+			
+		}
+	});
+	findFensterByTitle("Testfenster 1").front();
 
 	let x = 0;
 	let y = 0;
