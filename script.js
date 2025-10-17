@@ -355,13 +355,14 @@ function fenstersinit() {
 					let mode = (
 						(
 							inResizeZone(f.x - radius, f.y - radius, radius, radius, "UL") ||
+							inResizeZone(f.x + f.width, f.y - radius, radius, radius, "UR") ||
 							inResizeZone(f.x - radius, f.y + f.height, radius, radius, "DL") ||
 							inResizeZone(f.x + f.width, f.y + f.height, radius, radius, "DR")
 						) || (
 							inResizeZone(f.x, f.y - radius, f.width, radius, "U") ||
 							inResizeZone(f.x, f.y + f.height, f.width, radius, "D") ||
 							inResizeZone(f.x - radius, f.y, radius, f.height, "L") ||
-							inResizeZone(f.x + f.width, f.y + 13, radius * 2, f.height - 13, "R")
+							inResizeZone(f.x + f.width, f.y, radius, f.height, "R")
 						)
 					);
 					if (mode) {
@@ -443,6 +444,7 @@ function fenstersinit() {
 					break;
 				}
 				if (
+					inResizeZone(f.x + f.width, f.y - radius, radius, radius) ||
 					inResizeZone(f.x - radius, f.y + f.height, radius, radius)
 				) {
 					cursor = "nesw-resize";
