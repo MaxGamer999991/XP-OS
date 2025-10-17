@@ -29,6 +29,7 @@ class Fenster {
 		this.type = type;
 		this.showTitle = true;
 		this.showBorder = true;
+		this.canResize = true;
 		this.code = code;
 		this.var = {};
 		this.content = content;
@@ -41,6 +42,16 @@ class Fenster {
 
 		this.mouse = {
 			down: false,
+			resize: {
+				down: false,
+				dir: "",
+				x: 0,
+				y: 0,
+				offsetX: 0,
+				offsetY: 0,
+				w: 0,
+				h: 0
+			},
 			x: 0,
 			y: 0
 		};
@@ -61,8 +72,8 @@ class Fenster {
 		const prevY = (this.fullscreen ? 0 : this.y) + (this.mouse.down ? mouse.dy : 0);
 		const prevWidth = this.fullscreen ? canvas.width : this.width;
 		const prevHeight = this.fullscreen ? canvas.height : this.height;
-		const innerWidth = prevWidth - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0));
-		const innerHeight = prevHeight - (this.showTitle ? (this.showBorder ? 18 : 12) : (this.fullscreen ? 0 : (this.showBorder ? 4 : 0)));
+		const innerWidth = Math.floor(prevWidth - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0)));
+		const innerHeight = Math.floor(prevHeight - (this.showTitle ? (this.showBorder ? 18 : 12) : (this.fullscreen ? 0 : (this.showBorder ? 4 : 0))));
 
 		if (
 			this.canvas.width != innerWidth ||
@@ -137,11 +148,33 @@ class Fenster {
 
 			setColor(this.type == "error" || this.type == "warning" ? 255 : 0, this.type == "warning" ? 255 : 0, 0);
 			setSize(10);
-			ctx.fillText(
-				this.type == "normal" ? this.title : this.type.toUpperCase(),
-				prevX + (this.showBorder ? 4 : 2),
-				prevY + (this.showBorder ? 12 : 10)
-			);
+			if (this.type == "error" || this.type == "warning") {
+				ctx.fillText(
+					this.type.toUpperCase(),
+					prevX + (this.showBorder ? 4 : 2),
+					prevY + (this.showBorder ? 12 : 10)
+				);
+			} else {
+				let width = 0;
+				for (let i = 0; i < this.title.length; i++) {
+					let mess = ctx.measureText(this.title[i]);
+					if (width + mess.width < this.width - (this.showBorder ? 40 : 36) - ctx.measureText("...").width) {
+						ctx.fillText(
+							this.title[i],
+							prevX + (this.showBorder ? 4 : 2) + width,
+							prevY + (this.showBorder ? 12 : 10)
+						);
+						width += mess.width;
+					} else {
+						ctx.fillText(
+							"...",
+							prevX + this.width - (this.showBorder ? 37 : 33) - ctx.measureText("...").width,
+							prevY + (this.showBorder ? 12 : 10)
+						);
+						break;
+					}
+				}
+			}
 		}
 
 		if (this.type == "warning" || this.type == "error") {
@@ -195,8 +228,27 @@ class Fenster {
 			this.y = mouse.y - this.mouse.y;
 			this.doUpdate(2);
 		}
+		if (this.mouse.resize.down) {
+			if (this.mouse.resize.dir.includes("U")) {
+				this.y = Math.min(mouse.y - this.mouse.resize.offsetY, this.y + this.height - 20);
+				this.height = Math.max(this.mouse.resize.h + (this.mouse.resize.y - mouse.y), 20);
+			}
+			if (this.mouse.resize.dir.includes("L")) {
+				this.x = Math.min(mouse.x - this.mouse.resize.offsetX, this.x + this.width - 100);
+				this.width = Math.max(this.mouse.resize.w + (this.mouse.resize.x - mouse.x), 100);
+			}
+			if (this.mouse.resize.dir.includes("D")) {
+				this.height = Math.max(mouse.y - this.y, 20);
+			}
+			if (this.mouse.resize.dir.includes("R")) {
+				this.width = Math.max(mouse.x - this.x, 100);
+			}
+			this.doUpdate(4);
+		}
+
 	}
 	doUpdate(mode) {
+		// mode: 1 = click, 2 = move, 3 = close of win types [error, warning], 4 = resize
 		if (this.code.update && (this.type == "normal" || mode != 3))
 			this.code.update(this, mode,
 				(this.fullscreen ? canvas.width : this.width) - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0)),
@@ -236,6 +288,7 @@ function fenstersinit() {
 		const x = (e.clientX - rect.left) * (canvas.width / rect.width);
 		const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
+		const radius = 10;
 		for (let i = fensters.length - 1; i >= 0; i--) {
 			const f = fensters[i];
 			const prevX = f.fullscreen ? 0 : f.x;
@@ -255,8 +308,8 @@ function fenstersinit() {
 			}
 
 			if (
-				x >= prevX && x <= prevX + prevWidth &&
-				y >= prevY && y <= prevY + prevHeight
+				x >= prevX - radius && x <= prevX + prevWidth + radius &&
+				y >= prevY - radius && y <= prevY + prevHeight + radius
 			) {
 				f.front();
 				if (
@@ -284,6 +337,46 @@ function fenstersinit() {
 					}
 					return;
 				}
+
+				if (f.canResize && !f.fullscreen) {
+					function inResizeZone(xx, yy, w, h, mode) {
+						if (
+							x >= xx &&
+							x <= xx + w &&
+							y >= yy &&
+							y <= yy + h
+						) {
+							return mode;
+						} else {
+							return false;
+						}
+					}
+
+					let mode = (
+						(
+							inResizeZone(f.x - radius, f.y - radius, radius, radius, "UL") ||
+							inResizeZone(f.x - radius, f.y + f.height, radius, radius, "DL") ||
+							inResizeZone(f.x + f.width, f.y + f.height, radius, radius, "DR")
+						) || (
+							inResizeZone(f.x, f.y - radius, f.width, radius, "U") ||
+							inResizeZone(f.x, f.y + f.height, f.width, radius, "D") ||
+							inResizeZone(f.x - radius, f.y, radius, f.height, "L") ||
+							inResizeZone(f.x + f.width, f.y + 13, radius * 2, f.height - 13, "R")
+						)
+					);
+					if (mode) {
+						f.mouse.resize.down = true;
+						f.mouse.resize.dir = mode;
+						f.mouse.resize.x = x;
+						f.mouse.resize.y = y;
+						f.mouse.resize.offsetX = x - prevX;
+						f.mouse.resize.offsetY = y - prevY;
+						f.mouse.resize.w = f.width;
+						f.mouse.resize.h = f.height;
+						return;
+					}
+				}
+
 				f.mouse.x = x - prevX - (f.fullscreen && !f.showTitle ? 0 : 2);
 				f.mouse.y = y - prevY - (f.showTitle ? 16 : (f.fullscreen ? 0 : 2));
 				f.doUpdate(1);
@@ -312,15 +405,77 @@ function fenstersinit() {
 			mouseup(e);
 		}
 
-		for (let i = 0; i < fensters.length; i++) {
+		let cursor = "default";
+		const radius = 8;
+		for (let i = fensters.length - 1; i >= 0; i--) {
 			if (fensters[i].mouse.down) {
 				fensters[i].fullscreen = false;
 			}
+			if (fensters[i].mouse.resize.down) {
+				cursor = (
+					(fensters[i].mouse.resize.dir == "UL" || fensters[i].mouse.resize.dir == "DR") ? "nwse-resize" :
+						(fensters[i].mouse.resize.dir == "DL" || fensters[i].mouse.resize.dir == "UR") ? "nesw-resize" :
+							(fensters[i].mouse.resize.dir == "U" || fensters[i].mouse.resize.dir == "D") ? "ns-resize" :
+								(fensters[i].mouse.resize.dir == "L" || fensters[i].mouse.resize.dir == "R") ? "ew-resize" :
+									"default"
+				);
+			}
+			if (
+				fensters[i].canResize &&
+				!fensters[i].fullscreen &&
+				cursor == "default" &&
+				(fensters[i].showBorder || fensters[i].showTitle)
+			) {
+				const f = fensters[i];
+				function inResizeZone(x, y, w, h) {
+					return (
+						mouse.x >= x &&
+						mouse.x <= x + w &&
+						mouse.y >= y &&
+						mouse.y <= y + h
+					);
+				}
+				if (
+					inResizeZone(f.x - radius, f.y - radius, radius, radius) ||
+					inResizeZone(f.x + f.width, f.y + f.height, radius, radius)
+				) {
+					cursor = "nwse-resize";
+					break;
+				}
+				if (
+					inResizeZone(f.x - radius, f.y + f.height, radius, radius)
+				) {
+					cursor = "nesw-resize";
+					break;
+				}
+				if (
+					inResizeZone(f.x, f.y - radius, f.width, radius) ||
+					inResizeZone(f.x, f.y + f.height, f.width, radius)
+				) {
+					cursor = "ns-resize";
+					break;
+				}
+				if (
+					inResizeZone(f.x - radius, f.y, radius, f.height) ||
+					inResizeZone(f.x + f.width, f.y, radius, f.height)
+				) {
+					cursor = "ew-resize";
+					break;
+				}
+				if (
+					inResizeZone(f.x, f.y, f.width, f.height)
+				) {
+					cursor = "win";
+					break;
+				}
+			}
 		}
+		canvas.style.cursor = cursor == "win" ? "default" : cursor;
 	}
 	function mouseup(e) {
 		for (let i = 0; i < fensters.length; i++) {
 			fensters[i].mouse.down = false;
+			fensters[i].mouse.resize.down = false;
 		}
 	}
 	canvas.addEventListener("mousedown", mousedown);
@@ -563,6 +718,7 @@ async function main() {
 			fenster.fullscreen = false;
 			fenster.showTitle = false;
 			fenster.showBorder = false;
+			fenster.canResize = false;
 		},
 		update: (fenster, mode, width, height) => {
 
