@@ -83,8 +83,8 @@ function fenstersinit() {
 					}
 				}
 
-				f.mouse.x = mouse.x - prevX - (f.fullscreen && !f.showTitle ? 0 : 2);
-				f.mouse.y = mouse.y - prevY - (f.showTitle ? 16 : (f.fullscreen ? 0 : 2));
+				f.mouse.x = mouse.x - prevX - (f.fullscreen && !f.showTitle ? 0 : (f.showBorder ? 2 : 0));
+				f.mouse.y = mouse.y - prevY - (f.showTitle ? (f.showBorder ? 16 : 12) : (f.fullscreen ? 0 : (f.showBorder ? 2 : 0)));
 				f.doUpdate(1);
 				if (f.type == "warning" || f.type == "error") {
 					if (
@@ -127,6 +127,13 @@ function fenstersinit() {
 				);
 				break;
 			}
+
+			if ((inBox(f.x, f.y, f.width, f.height) || f.fullscreen) && e.buttons == 1 && !f.mouse.down && !f.mouse.resize.down) {
+				f.mouse.x = mouse.x - (f.fullscreen ? 0 : f.x) - (f.fullscreen && !f.showTitle ? 0 : (f.showBorder ? 2 : 0));
+				f.mouse.y = mouse.y - (f.fullscreen ? 0 : f.y) - (f.showTitle ? (f.showBorder ? 16 : 12) : (f.fullscreen ? 0 : (f.showBorder ? 2 : 0)));
+				f.doUpdate(5);
+			}
+
 			if (
 				f.canResize &&
 				!f.fullscreen &&
@@ -160,12 +167,6 @@ function fenstersinit() {
 					break;
 				}
 				if (cursor != "default") break;
-			}
-			
-			if ((inBox(f.x, f.y, f.width, f.height) || f.fullscreen) && e.buttons == 1) {
-				f.mouse.x = mouse.x - (f.fullscreen ? 0 : f.x) - (f.fullscreen && !f.showTitle ? 0 : 2);
-				f.mouse.y = mouse.y - (f.fullscreen ? 0 : f.y) - (f.showTitle ? 16 : (f.fullscreen ? 0 : 2));
-				f.doUpdate(5);
 			}
 
 			if (f.fullscreen) {
