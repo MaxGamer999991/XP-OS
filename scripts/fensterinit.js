@@ -93,7 +93,6 @@ function fenstersinit() {
 						f.mouse.y >= f.canvas.height - 20 &&
 						f.mouse.y <= f.canvas.height - 5
 					) {
-						f.doUpdate(3);
 						f.close();
 					}
 				}

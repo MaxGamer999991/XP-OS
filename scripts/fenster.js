@@ -41,6 +41,7 @@ class Fenster {
 		}
 
 		fensters.push(this);
+		this.doUpdate(0);
 	}
 	render() {
 		if (this.type == "warning" || this.type == "error") {
@@ -229,7 +230,7 @@ class Fenster {
 
 	}
 	doUpdate(mode) {
-		// mode: 1 = in_click, 2 = win_move, 3 = close of win types [error, warning], 4 = win_resize, 5 = in_move
+		// mode: 0 = init, 1 = in_click, 2 = win_move, 3 = close, 4 = win_resize, 5 = in_move
 		if (this.code.update && (this.type == "normal" || mode != 3))
 			this.code.update(this, mode,
 				(this.fullscreen ? canvas.width : this.width) - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0)),
@@ -244,6 +245,7 @@ class Fenster {
 		}
 	}
 	close() {
+		this.doUpdate(3);
 		fensters.splice(fensters.indexOf(this), 1);
 	}
 }
