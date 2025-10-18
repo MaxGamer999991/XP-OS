@@ -1,4 +1,4 @@
-new Fenster(150, 150, 200, 100, "Testfenster 2", "normal", {
+new Fenster(150, 150, 200, 100, "DVD", "normal", {
 	render: (fenster, ctx, width, height, isChanged) => {
 		fenster.var.dx = (fenster.var.dx || -1);
 		fenster.var.dy = (fenster.var.dy || 1);

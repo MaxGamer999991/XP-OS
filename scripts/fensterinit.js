@@ -1,17 +1,7 @@
 const resizeZone = 10;
 const renderResizeZone = 8;
 function fenstersinit() {
-	function inBox(x, y, w, h, returns = true) {
-		if (
-			mouse.x >= x &&
-			mouse.x <= x + w &&
-			mouse.y >= y &&
-			mouse.y <= y + h
-		) {
-			return returns;
-		} else return false;
-	}
-
+	
 	function mousedown(e) {
 		const rect = canvas.getBoundingClientRect();
 		mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);

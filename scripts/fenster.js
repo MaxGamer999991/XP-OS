@@ -130,31 +130,24 @@ class Fenster {
 
 			setColor(this.type == "error" || this.type == "warning" ? 255 : 0, this.type == "warning" ? 255 : 0, 0);
 			setSize(10);
-			if (this.type == "error" || this.type == "warning") {
-				ctx.fillText(
-					this.type.toUpperCase(),
-					prevX + (this.showBorder ? 4 : 2),
-					prevY + (this.showBorder ? 12 : 10)
-				);
-			} else {
-				let width = 0;
-				for (let i = 0; i < this.title.length; i++) {
-					let mess = ctx.measureText(this.title[i]);
-					if (width + mess.width < this.width - (this.showBorder ? 40 : 36) - ctx.measureText("...").width) {
-						ctx.fillText(
-							this.title[i],
-							prevX + (this.showBorder ? 4 : 2) + width,
-							prevY + (this.showBorder ? 12 : 10)
-						);
-						width += mess.width;
-					} else {
-						ctx.fillText(
-							"...",
-							prevX + this.width - (this.showBorder ? 37 : 33) - ctx.measureText("...").width,
-							prevY + (this.showBorder ? 12 : 10)
-						);
-						break;
-					}
+			let title = this.type == "error" ? this.title.toUpperCase() : this.title;
+			let width = 0;
+			for (let i = 0; i < title.length; i++) {
+				let mess = ctx.measureText(title[i]);
+				if (width + mess.width < this.width - (this.showBorder ? 40 : 36) - ctx.measureText("...").width) {
+					ctx.fillText(
+						title[i],
+						prevX + (this.showBorder ? 4 : 2) + width,
+						prevY + (this.showBorder ? 12 : 10)
+					);
+					width += mess.width;
+				} else {
+					ctx.fillText(
+						"...",
+						prevX + this.width - (this.showBorder ? 37 : 33) - ctx.measureText("...").width,
+						prevY + (this.showBorder ? 12 : 10)
+					);
+					break;
 				}
 			}
 		}

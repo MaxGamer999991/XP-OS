@@ -4,6 +4,7 @@ async function main() {
 	fenstersinit();
 
 	await openFenster("background");
+	await openFenster("task");
 	openFenster("DVD");
 	openFenster("ERROR");
 	openFenster("WARNING");

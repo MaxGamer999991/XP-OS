@@ -115,9 +115,12 @@ class Asset {
 		}
 		return false;
 	}
+	clear() {
+		assets.splice(assets.indexOf(this), 1);
+	}
 }
 function getAsset(name) {
-	return assets.find(a => a.name == name);
+	return assets.find(a => a.name == name) || assets.find(a => a.path == name);
 }
 async function openFenster(name) {
 	const fensterAsset = getAsset(name);
@@ -152,6 +155,7 @@ async function boot() {
 	new Asset("./img/Logo.png", "logo", "img");
 
 	new Asset("./fensters/background.js", "background", "fenster");
+	new Asset("./fensters/task.js", "task", "fenster");
 
 	while (
 		performance.now() - startt < 2000 ||
