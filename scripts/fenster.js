@@ -229,7 +229,7 @@ class Fenster {
 
 	}
 	doUpdate(mode) {
-		// mode: 1 = click, 2 = move, 3 = close of win types [error, warning], 4 = resize
+		// mode: 1 = in_click, 2 = win_move, 3 = close of win types [error, warning], 4 = win_resize, 5 = in_move
 		if (this.code.update && (this.type == "normal" || mode != 3))
 			this.code.update(this, mode,
 				(this.fullscreen ? canvas.width : this.width) - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0)),

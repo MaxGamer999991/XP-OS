@@ -47,56 +47,64 @@ new Fenster(50, 50, 200, 100, "Testfenster 1", "normal", {
 		ctx.fillText("W", width - 13, height - 31);
 	},
 	update: (fenster, mode, width, height) => {
-		if (mode == 1) {
-			if (
-				fenster.mouse.x < 16 &&
-				fenster.mouse.y < 16
-			) {
-				fenster.showTitle = !fenster.showTitle;
-			}
+		switch (mode) {
+			case 1:
+				if (
+					fenster.mouse.x < 16 &&
+					fenster.mouse.y < 16
+				) {
+					fenster.showTitle = !fenster.showTitle;
+				}
 
-			if (
-				fenster.mouse.x < 16 &&
-				fenster.mouse.y > 20 &&
-				fenster.mouse.y < 36
-			) {
-				fenster.showBorder = !fenster.showBorder;
-			}
+				if (
+					fenster.mouse.x < 16 &&
+					fenster.mouse.y > 20 &&
+					fenster.mouse.y < 36
+				) {
+					fenster.showBorder = !fenster.showBorder;
+				}
 
-			if (
-				fenster.mouse.x > width - 20 &&
-				fenster.mouse.y > height - 20
-			) {
-				new Fenster(
-					fenster.x + 25,
-					fenster.y + 25,
-					200, 100,
-					"Error", "error",
-					{},
-					"Dies ist eine Fehlermeldung!\nBitte schließen Sie dieses Fenster."
-				).front();
-			}
-			if (
-				fenster.mouse.x > width - 20 &&
-				fenster.mouse.y > height - 45 &&
-				fenster.mouse.y < height - 25
-			) {
-				new Fenster(
-					fenster.x + 25,
-					fenster.y + 25,
-					200, 100,
-					"Warnung", "warning",
-					{},
-					"Dies ist eine Warnung!\nBitte schließen Sie dieses Fenster."
-				).front();
-			}
+				if (
+					fenster.mouse.x > width - 20 &&
+					fenster.mouse.y > height - 20
+				) {
+					new Fenster(
+						fenster.x + 25,
+						fenster.y + 25,
+						200, 100,
+						"Error", "error",
+						{},
+						"Dies ist eine Fehlermeldung!\nBitte schließen Sie dieses Fenster."
+					).front();
+				}
+				if (
+					fenster.mouse.x > width - 20 &&
+					fenster.mouse.y > height - 45 &&
+					fenster.mouse.y < height - 25
+				) {
+					new Fenster(
+						fenster.x + 25,
+						fenster.y + 25,
+						200, 100,
+						"Warnung", "warning",
+						{},
+						"Dies ist eine Warnung!\nBitte schließen Sie dieses Fenster."
+					).front();
+				}
 
-			setColor(0, 0, 0, fenster.ctx);
-			fenster.ctx.fillRect(fenster.mouse.x - 2, fenster.mouse.y - 2, 4, 4);
-		}
-		if (mode == 2) {
-			setColor(255, 255, 255, fenster.ctx);
-			fenster.ctx.fillRect(0, 40, 50, 13);
+				setColor(0, 0, 0, fenster.ctx);
+				fenster.ctx.fillRect(fenster.mouse.x - 2, fenster.mouse.y - 2, 4, 4);
+				break;
+			case 2:
+				setColor(255, 255, 255, fenster.ctx);
+				fenster.ctx.fillRect(0, 40, 50, 13);
+				break;
+			case 5:
+				setColor(255, 0, 0, fenster.ctx);
+				fenster.ctx.fillRect(fenster.mouse.x - 1, fenster.mouse.y - 1, 2, 2);
+				break;
+			default:
+				break;
 		}
 	}
 });

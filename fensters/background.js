@@ -7,15 +7,14 @@ new Fenster(150, 150, 200, 100, "Background", "normal", {
 
 		setSize(30, ctx);
 		let num = performance.now() / 50;
-		num = Math.floor(num) % 100;
-		if (num > 50) num = 100 - num;
-		num += Math.random() * 5;
+		num = Math.floor(num) % 255;
+		if (num > 128) num = 255 - num;
 		setColor(num, num, num, ctx);
 
 		ctx.fillText(
 			"Max-OS",
 			(width / 2) - (ctx.measureText("Max-OS").width / 2),
-			height / (3 / 1)
+			height / (7 / 2)
 		);
 
 		fenster.fullscreen = true;
