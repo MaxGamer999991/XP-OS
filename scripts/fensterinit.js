@@ -121,7 +121,7 @@ function fenstersinit() {
 		mouse.y = (e.clientY - canvas.getBoundingClientRect().top) * (canvas.height / canvas.clientHeight);
 
 		if (!e.buttons)
-			return mouseup(e);
+			mouseup(e);
 
 		let cursor = "default";
 		for (let i = fensters.length - 1; i >= 0; i--) {
@@ -190,6 +190,7 @@ function fenstersinit() {
 			}
 		}
 		canvas.style.cursor = cursor;
+		console.log(cursor);
 	}
 	function mouseup(e) {
 		for (let i = 0; i < fensters.length; i++) {
