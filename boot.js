@@ -56,9 +56,9 @@ class Asset {
 				break;
 			case "fenster":
 				this.src = "";
+				this.code = null;
 				fetch(path)
-					.then(r => r.text())
-					.then(t => this.src = t)
+					.then(r => {r.text().then(t => this.src = t); this.code = r.status;})
 					.catch(() => this.hasError = true);
 				break;
 			default:
@@ -102,8 +102,7 @@ class Asset {
 						break;
 					case "fenster":
 						fetch(this.path)
-							.then(r => r.text())
-							.then(t => this.src = t)
+							.then(r => {r.text().then(t => this.src = t); this.code = r.status;})
 							.catch(() => this.hasError = true);
 						break;
 					default:
@@ -122,10 +121,11 @@ class Asset {
 function getAsset(name) {
 	return assets.find(a => a.name == name) || assets.find(a => a.path == name);
 }
-async function openFenster(name) {
+async function openFenster(name, ignore = false) {
 	const fensterAsset = getAsset(name);
 	if (!fensterAsset) {
-		new Asset("./fensters/" + name + ".js", name, "fenster");
+		let path = ((name.startsWith("./") || name.startsWith("../") || name.startsWith(":")) ? "" : "./fensters/") + (name.startsWith(":") ? name.slice(1) : name) + (name.endsWith(".js") ? "" : ".js");
+		new Asset(path, name, "fenster");
 	}
 	await new Promise(r => {
 		const check = setInterval(() => {
@@ -137,7 +137,14 @@ async function openFenster(name) {
 			} else a.error();
 		}, 100);
 	});
-	eval(getAsset(name).src);
+	if (getAsset(name).code == 404) {
+		return console.warn("Fenster '" + name + "' nicht gefunden!");
+	}
+	if (getAsset(name).src.startsWith("// Max-OS Fenster Signature") || ignore) {
+		eval(getAsset(name).src);
+	} else {
+		return console.warn("Fenster '" + name + "' ist kein gültiges Max-OS Fenster!");
+	}
 }
 async function boot() {
 	let start = performance.now();

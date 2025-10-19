@@ -1,3 +1,4 @@
+// Max-OS Fenster Signature
 new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 	render: (fenster, ctx, width, height, isChanged) => {
 		ctx.clearRect(0, 0, width, height);
@@ -66,13 +67,17 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 			case 1:
 				for (let i = 0; i < assets.length; i++) {
 					if (assets[i].type == "fenster") {
-						list.push({ name: assets[i].name, path: assets[i].path });
+						list.push({ name: assets[i].name, path: assets[i].path, code: assets[i].code });
 					}
 				}
-				let colWidth = list.reduce((a, c) => Math.max(a, ctx.measureText(c.name, 10).width), 0);
+				let colWidth = list.reduce((a, c) => Math.max(a, ctx.measureText(c.name.split("/").pop(), 10).width), 0);
 				for (let i = 0; i < list.length; i++) {
-					setColor(0, 0, 0, ctx);
-					ctx.fillText(list[i].name, 2, height2 + 26);
+					setColor(
+						list[i].code == 404 || !getAsset(list[i].name).src.startsWith("// Max-OS Fenster Signature") ? 100 : 0,
+						list[i].code != 404 && !getAsset(list[i].name).src.startsWith("// Max-OS Fenster Signature") ? 100 : 0,
+						0, ctx
+					);
+					ctx.fillText(list[i].name.split("/").pop(), 2, height2 + 26);
 					ctx.fillText(list[i].path, colWidth + 12, height2 + 26);
 					setColor(100, 100, 100, ctx);
 					ctx.fillRect(2, height2 + 29, width - 4, 1);
@@ -85,26 +90,49 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 						13
 					);
 					setColor(0, 0, 0, ctx);
-					ctx.fillRect(width - ctx.measureText("Run", 10).width - 9, height2 + 16, ctx.measureText("Run", 10).width + 8, 13);
+					if (list[i].code != 404) {
+						ctx.fillRect(width - ctx.measureText("Run", 10).width - 9, height2 + 16, ctx.measureText("Run", 10).width + 8, 13);
+					}
 					ctx.fillRect(width - ctx.measureText("Clear", 10).width - 10 - ctx.measureText("Run", 10).width - 9, height2 + 16, ctx.measureText("Clear", 10).width + 8, 13);
 
-					setColor(100, 125, 100, ctx);
-					ctx.fillRect(width - ctx.measureText("Run", 10).width - 8, height2 + 17, ctx.measureText("Run", 10).width + 6, 11);
+					if (list[i].code != 404) {
+						setColor(getAsset(list[i].name).src.startsWith("// Max-OS Fenster Signature") ? 100 : 125, 125, 100, ctx);
+						ctx.fillRect(width - ctx.measureText("Run", 10).width - 8, height2 + 17, ctx.measureText("Run", 10).width + 6, 11);
+					}
 					setColor(125, 100, 100, ctx);
 					ctx.fillRect(width - ctx.measureText("Clear", 10).width - 10 - ctx.measureText("Run", 10).width - 8, height2 + 17, ctx.measureText("Clear", 10).width + 6, 11);
 					setColor(0, 0, 0, ctx);
-					ctx.fillText("Run", width - ctx.measureText("Run", 10).width - 4, height2 + 26);
+					if (list[i].code != 404) {
+						ctx.fillText("Run", width - ctx.measureText("Run", 10).width - 4, height2 + 26);
+					}
 					ctx.fillText("Clear", width - ctx.measureText("Clear", 10).width - 10 - ctx.measureText("Run", 10).width - 4, height2 + 26);
 
 					height2 += 14;
 				}
+
+				setColor(0, 0, 0, ctx);
+				ctx.fillRect(1, height - 16 - 1, width - 2, 16);
+				setColor(100, 100, 100, ctx);
+				ctx.fillRect(2, height - 14 - 2, width - 4, 14);
+				let num = fenster.var.text ? 0 : 50;
+				let text = fenster.var.text.text || (fenster.var.text.select != -1 ? "" : "Loud Fenster");
+				setColor(num, num, num, ctx);
+				ctx.fillText(text, 4, height - 4);
+				if (fenster.var.text.select >= 0 && performance.now() % 1000 < 500) {
+					const before = text.slice(0, fenster.var.text.select);
+					const mess = ctx.measureText(before, 10).width;
+					setColor(0, 0, 0, ctx);
+					ctx.fillText("|", mess + 1, height - 6);
+				}
 				break;
 		}
+
 	},
 	update: (fenster, mode, width, height) => {
 		switch (mode) {
 			case 0:
 				fenster.var.tab = 0;
+				fenster.var.text = { text: "", select: -1 };
 				break;
 			case 1:
 				const x = fenster.mouse.x;
@@ -149,16 +177,27 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 						}
 						break;
 					case 1:
+						if (inBox(2, height - 16, width - 4, 16, true, { x, y })) {
+							let text = fenster.var.text.text || "";
+							let select = 0;
+							while (select < text.length && ctx.measureText(text.slice(0, select + 1), 10).width < x - 4) {
+								select++;
+							}
+							fenster.var.text.select = select;
+							break;
+						} else {
+							fenster.var.text.select = -1;
+						}
 						if (inBox(width - ctx.measureText("Run", 10).width - 9, 16, ctx.measureText("Run", 10).width + 8, height - 16, true, { x, y })) {
 							let list = [];
 							for (let i = 0; i < assets.length; i++) {
 								if (assets[i].type == "fenster") {
-									list.push({ name: assets[i].name, path: assets[i].path });
+									list.push({ name: assets[i].name, path: assets[i].path, code: assets[i].code });
 								}
 							}
 							let index = Math.floor((y - 16) / 14);
-							if (list[index]) {
-								openFenster(list[index].name).then(() => fenster.front());
+							if (list[index] && list[index].code != 404) {
+								openFenster(list[index].name, true).then(() => fenster.front());
 							}
 						}
 						if (inBox(width - ctx.measureText("Clear", 10).width - 10 - ctx.measureText("Run", 10).width - 9, 16, ctx.measureText("Clear", 10).width + 8, height - 16, true, { x, y })) {
@@ -169,6 +208,7 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 								}
 							}
 							let index = Math.floor((y - 16) / 14);
+							if (["task", "background"].includes(list[index].name)) return new Fenster(200, 200, 200, 100, "System Error", "error", {}, "Diese Fenster im Cache kann nicht geschlossen werden.");
 							if (list[index]) {
 								getAsset(list[index].name).clear();
 							}
@@ -185,6 +225,55 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 					});
 				}
 				break;
+			case 6:
+				if (keyspressed.length > 0) {
+					for (let k = 0; k < keyspressed.length; k++) {
+						const key = keyspressed[k];
+						if (key.code.startsWith("Key") || key.code.startsWith("Digit") || ["Period", "Space"].includes(key.code)) {
+							if (fenster.var.text.select >= 0) {
+								let char = key.key;
+								char = keyspress.some(k => k.code.startsWith("Shift")) ? char.toUpperCase() : char.toLowerCase();
+								fenster.var.text.text =
+									fenster.var.text.text.slice(0, fenster.var.text.select) +
+									char +
+									fenster.var.text.text.slice(fenster.var.text.select);
+								fenster.var.text.select++;
+							}
+						}
+						switch (key.code) {
+							case "Backspace":
+								if (fenster.var.text.select > 0 && fenster.var.text.text && fenster.var.text.text.length > 0) {
+									fenster.var.text.text =
+										fenster.var.text.text.slice(0, fenster.var.text.select - 1) +
+										fenster.var.text.text.slice(fenster.var.text.select);
+									fenster.var.text.select--;
+								}
+								break;
+							case "Delete":
+								if (fenster.var.text.text && fenster.var.text.text.length > 0) {
+									fenster.var.text.text =
+										fenster.var.text.text.slice(0, fenster.var.text.select) +
+										fenster.var.text.text.slice(fenster.var.text.select + 1);
+								}
+								break;
+							case "ArrowLeft":
+								fenster.var.text.select = Math.max(0, fenster.var.text.select - 1);
+								break;
+							case "ArrowRight":
+								fenster.var.text.select = Math.min(fenster.var.text.text.length, fenster.var.text.select + 1);
+								break;
+							case "Enter":
+								if (fenster.var.text.text && fenster.var.text.text.length > 0) {
+									openFenster(fenster.var.text.text).then(() => fenster.front());
+									fenster.var.text.text = "";
+									fenster.var.text.select = -1;
+								}
+								break;
+							default:
+								break;
+						}
+					}
+				}
 			default:
 				break;
 		}

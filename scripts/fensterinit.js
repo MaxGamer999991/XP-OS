@@ -1,7 +1,9 @@
 const resizeZone = 10;
 const renderResizeZone = 8;
+const keyspressed = [];
+const keyspress = [];
 function fenstersinit() {
-	
+
 	function mousedown(e) {
 		const rect = canvas.getBoundingClientRect();
 		mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -173,6 +175,18 @@ function fenstersinit() {
 			fensters[i].mouse.y = 0;
 		}
 	}
+
+	function keydown(e) {
+		keyspressed.push({ code: e.code, key: e.key });
+		if (!keyspress.some(k => k.code == e.code && k.key == e.key))
+			keyspress.push({ code: e.code, key: e.key });
+	}
+	function keyup(e) {
+		const idx = keyspress.findIndex(k => k.code == e.code && k.key == e.key);
+		if (idx != -1) keyspress.splice(idx, 1);
+	}
+	window.addEventListener("keydown", keydown);
+	window.addEventListener("keyup", keyup);
 
 	canvas.addEventListener("mousedown", mousedown);
 	canvas.addEventListener("mousemove", mousemove);

@@ -220,10 +220,10 @@ class Fenster {
 			}
 			this.doUpdate(4);
 		}
-
+		this.doUpdate(6);
 	}
 	doUpdate(mode) {
-		// mode: 0 = init, 1 = in_click, 2 = win_move, 3 = close, 4 = win_resize, 5 = in_move
+		// mode: 0 = init, 1 = in_click, 2 = win_move, 3 = close, 4 = win_resize, 5 = in_move, 6 = update
 		if (this.code.update && (this.type == "normal" || mode != 3))
 			this.code.update(this, mode,
 				(this.fullscreen ? canvas.width : this.width) - (this.fullscreen && !this.showTitle ? 0 : (this.showBorder ? 4 : 0)),

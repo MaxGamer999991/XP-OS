@@ -19,4 +19,6 @@ function update() {
 
 	mouse.dx = 0;
 	mouse.dy = 0;
+
+	keyspressed.length = 0;
 }

@@ -1,3 +1,4 @@
+// Max-OS Fenster Signature
 new Fenster(50, 50, 200, 100, "Testfenster 1", "normal", {
 	render: (fenster, ctx, width, height, isChanged) => {
 		if (isChanged) {
