@@ -33,7 +33,7 @@ function setSize(size, cctx = ctx) {
 
 const assets = [];
 class Asset {
-	constructor(path, name, type) {
+	constructor(path, name, type, require = false) {
 		this.path = path;
 		this.name = name || path;
 
@@ -57,6 +57,7 @@ class Asset {
 			case "fenster":
 				this.src = "";
 				this.code = null;
+				this.require = require;
 				fetch(path)
 					.then(r => {r.text().then(t => this.src = t); this.code = r.status;})
 					.catch(() => this.hasError = true);
@@ -76,7 +77,7 @@ class Asset {
 			case "script":
 				return this.done;
 			case "fenster":
-				return this.src != "";
+				return (this.src != "" && (this.code == 200 || !this.require));
 			default:
 				return false;
 		}
@@ -161,8 +162,9 @@ async function boot() {
 	new Asset("./img/Schlissen.png", "win_close", "img");
 	new Asset("./img/Logo.png", "logo", "img");
 
-	new Asset("./fensters/background.js", "background", "fenster");
-	new Asset("./fensters/task.js", "task", "fenster");
+	new Asset("./fensters/background.js", "background", "fenster", true);
+	new Asset("./fensters/task.js", "task", "fenster", true);
+	new Asset("./fensters/Demo.js", "Demo", "fenster", true);
 
 	while (
 		performance.now() - startt < 2000 ||

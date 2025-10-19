@@ -1,4 +1,5 @@
 let DEBUG_FPS = true;
+const systemFensters = ["background", "task", "Demo"];
 async function main() {
 
 	fenstersinit();

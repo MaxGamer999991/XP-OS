@@ -1,5 +1,5 @@
 // Max-OS Fenster Signature
-new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
+new Fenster(150, 150, 200, 100, "Taskmanager", "task", "normal", {
 	render: (fenster, ctx, width, height, isChanged) => {
 		ctx.clearRect(0, 0, width, height);
 
@@ -163,12 +163,12 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 							if (fensters[index]) {
 								for (let i = 0; i < fensters.length; i++) {
 									if (fensters[i].title == fensters[index].title) {
-										if (["Taskmanager", "Background"].includes(fensters[i].title) ? fenster.var.war : true) {
+										if (systemFensters.includes(fensters[i].path) ? fenster.var.war : true) {
 											fensters.splice(i, 1);
 											fenster.var.war = false;
 										} else {
 											fenster.var.war = true;
-											new Fenster(200, 200, 200, 100, "System Error", "error", {}, "Möchten Sie den Prozess \"" + fensters[i].title + "\" wirklich beenden? Dies kann ungewollte System Fehler verursachen. Klicken Sie erneut auf 'Kill' um den Prozess zu beenden.");
+											new Fenster(200, 200, 200, 100, "System Error", "sys", "error", {}, "Möchten Sie den Prozess \"" + fensters[i].title + "\" wirklich beenden? Dies kann ungewollte System Fehler verursachen. Klicken Sie erneut auf 'Kill' um den Prozess zu beenden.");
 										}
 										break;
 									}
@@ -208,7 +208,7 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 								}
 							}
 							let index = Math.floor((y - 16) / 14);
-							if (["task", "background"].includes(list[index].name)) return new Fenster(200, 200, 200, 100, "System Error", "error", {}, "Diese Fenster im Cache kann nicht geschlossen werden.");
+							if (systemFensters.includes(list[index].name)) return new Fenster(200, 200, 200, 100, "System Error", "sys", "error", {}, "Diese Fenster im Cache kann nicht geschlossen werden.");
 							if (list[index]) {
 								getAsset(list[index].name).clear();
 							}
@@ -221,7 +221,7 @@ new Fenster(150, 150, 200, 100, "Taskmanager", "normal", {
 				if (!fenster.var.cwar && fensters.reduce((a, c) => a + (c.title == "Taskmanager" ? 1 : 0), 0) == 1) {
 					openFenster("task").then(() => {
 						fensters[fensters.length - 1].var.cwar = true;
-						new Fenster(200, 200, 200, 100, "System Error", "error", {}, "Möchten Sie den Taskmanager wirklich beenden? Dies kann ungewollte System Fehler verursachen. Klicken Sie erneut auf Schließen um den Taskmanager zu beenden.");
+						new Fenster(200, 200, 200, 100, "System Error", "sys", "error", {}, "Möchten Sie den Taskmanager wirklich beenden? Dies kann ungewollte System Fehler verursachen. Klicken Sie erneut auf Schließen um den Taskmanager zu beenden.");
 					});
 				}
 				break;

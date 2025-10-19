@@ -1,5 +1,5 @@
 // Max-OS Fenster Signature
-new Fenster(150, 150, 200, 100, "Background", "normal", {
+new Fenster(150, 150, 200, 100, "Background", "background", "normal", {
 	render: (fenster, ctx, width, height, isChanged) => {
 		ctx.clearRect(0, 0, width, height);
 

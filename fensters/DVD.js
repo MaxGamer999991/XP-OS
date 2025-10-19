@@ -1,5 +1,5 @@
 // Max-OS Fenster Signature
-new Fenster(150, 150, 200, 100, "DVD", "normal", {
+new Fenster(150, 150, 200, 100, "DVD", "dvd", "normal", {
 	render: (fenster, ctx, width, height, isChanged) => {
 		fenster.var.dx = (fenster.var.dx || -1);
 		fenster.var.dy = (fenster.var.dy || 1);

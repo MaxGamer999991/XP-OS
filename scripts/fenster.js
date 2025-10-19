@@ -1,12 +1,13 @@
 const fensters = [];
 class Fenster {
-	constructor(x, y, width, height, title = "Fenster", type = "normal", code = { render: () => { }, update: () => { } }, content = null) {
+	constructor(x, y, width, height, title = "Fenster", path, type = "normal", code = { render: () => { }, update: () => { } }, content = null) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
 		this.fullscreen = false;
 		this.title = title;
+		this.path = type == "normal" ? path : "sys";
 		this.type = type;
 		this.showTitle = true;
 		this.showBorder = true;
